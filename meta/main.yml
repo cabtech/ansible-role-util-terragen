@@ -1,0 +1,6 @@
+---
+dependencies: []
+galaxy_info:
+  namespace: cabtech
+  role_name: ansible_role_util_terragen
+...
