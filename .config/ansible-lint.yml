@@ -1,9 +1,7 @@
 ---
-exclude_paths:
-- ../playbooks
 skip_list:
-- experimental
 - meta-no-info
 - role-name
-- yaml[indentation]
+- ignore-errors
 ...
+# jinja[spacing]
