@@ -1,0 +1,21 @@
+# MANAGED_BY_ANSIBLE
+{% if vultr is defined %}
+{%		for region in vultr.regions %}
+{%			 if region.network is defined and region.network.vpcs is defined %}
+{%				for vpc in (region.network.vpcs | default([])) %}
+{%					set TMP_HANDLE = "slug_product_env_" + region.name + "_core_" + vpc.name %}
+{%					set HANDLE = "slug_" + vpc.name %}
+{%					set LABEL = HANDLE.replace("_", "-") %}
+
+resource "vultr_vpc" "{{ HANDLE }}" {
+  description    = "{{ vpc.description }}"
+  region         = "{{ region.name }}"
+{%					if vpc.ipv4 is defined %}
+  v4_subnet      = "{{ vpc.ipv4.subnet }}"
+  v4_subnet_mask = {{ vpc.ipv4.mask }}
+{%					endif %}
+}
+{%				endfor %}
+{%			 endif %}
+{%		endfor %}
+{% endif %}

@@ -1,0 +1,44 @@
+# MANAGED_BY_ANSIBLE
+{% if vultr is defined %}
+{%		for region in vultr.regions %}
+{%			 if region.compute is defined %}
+{%				for instance in (region.compute.instances | default([])) %}
+{%					set HANDLE = "product_env_" + region.name + "_core_" + instance.name %}
+{%					set LABEL = HANDLE.replace("_", "-") %}
+
+resource "vultr_instance" "{{ HANDLE }}" {
+  activation_email  = false
+  backups           = "disabled"
+  ddos_protection   = false
+  enable_ipv6       = true
+  firewall_group_id = vultr_firewall_group.slug_{{ instance.firewall.name }}.id
+  hostname          = "{{ LABEL }}"
+  label             = "{{ LABEL }}"
+  os_id             = 1743 # Ubuntu22
+  plan              = "{{ instance.plan }}"
+  region            = "{{ region.name }}"
+{%					if instance.tags is defined %}
+
+  tags = [
+{%						for tag in instance.tags %}
+    "{{ tag }}",
+{%						endfor %}
+  ]
+{%					endif %}
+
+  ssh_key_ids = [vultr_ssh_key.product_env_global_core_{{ instance.ssh_key }}.id]
+  vpc_ids     = [vultr_vpc.{{ instance.vpc }}.id]
+}
+{%					if instance.fixed_ip | default(false) %}
+
+resource "vultr_reserved_ip" "{{ HANDLE }}" {
+  instance_id = vultr_instance.{{ HANDLE }}.id
+  ip_type     = "v4"
+  label       = "{{ LABEL }}"
+  region      = "{{ region.name }}"
+}
+{%					endif %}
+{%				endfor %}
+{%			 endif %}
+{%		endfor %}
+{% endif %}

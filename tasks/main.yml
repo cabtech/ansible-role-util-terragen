@@ -1,0 +1,29 @@
+---
+# --------------------------------
+
+- name: "Generate VPCs"
+  ansible.builtin.template:
+    dest: vultr-network-vpcs.tf
+    mode: "0644"
+    src: hcl2/vultr/network/vpcs.tf.j2
+  delegate_to: localhost
+  tags: [terragen]
+
+- name: "Generate compute SSH keys"
+  ansible.builtin.template:
+    dest: vultr-compute-sshKeys.tf
+    mode: "0644"
+    src: hcl2/vultr/compute/sshKeys.tf.j2
+  delegate_to: localhost
+  tags: [terragen]
+
+- name: "Generate compute instances"
+  ansible.builtin.template:
+    dest: vultr-compute-instances.tf
+    mode: "0644"
+    src: hcl2/vultr/compute/instances.tf.j2
+  delegate_to: localhost
+  tags: [terragen]
+
+# --------------------------------
+...

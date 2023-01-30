@@ -1,0 +1,14 @@
+# MANAGED_BY_ANSIBLE
+{% if vultr is defined %}
+{%		if vultr.compute is defined %}
+{%			for kk in (vultr.compute.ssh_keys | default([])) %}
+{%				set HANDLE = "product_env_global_core_" + kk.name %}
+{%				set LABEL = "ssh-" + HANDLE.replace("_", "-") %}
+
+resource "vultr_ssh_key" "{{ HANDLE }}" {
+  name    = "{{ LABEL }}"
+  ssh_key = trim(file("{{ kk.filename }}"), "\n")
+}
+{%			endfor %}
+{%		endif %}
+{% endif %}

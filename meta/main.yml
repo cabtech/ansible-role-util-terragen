@@ -1,6 +1,19 @@
 ---
+# --------------------------------
+
 dependencies: []
+
 galaxy_info:
-  namespace: cabtech
+  author: Tim Short
+  description: Role for generating Terraform from YAML schemas
+  galaxy_tags: [cloud, terraform]
+  license: GPL v3
   role_name: ansible_role_util_terragen
+  min_ansible_version: "2"
+  namespace: cabtech
+  platforms:
+  - name: Ubuntu
+    versions: [bionic, focal, jammy]
+
+# --------------------------------
 ...
