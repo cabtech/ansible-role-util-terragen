@@ -18,7 +18,7 @@ import json
 # import re
 import requests
 
-TERRAGEN_ENVVARS = ["TERRAGEN_PRODUCT_NAME"]
+TERRAGEN_ENVVARS = ["TERRAGEN_ENV_NAME", "TERRAGEN_PRODUCT_NAME"]
 VULTR_ENVVARS = ["VULTR_API_KEY"]
 
 ROLES = [
@@ -259,6 +259,7 @@ if __name__ == "__main__":
     # ERRORS)
     homedir = os.path.expanduser("~")
     product = os.environ["TERRAGEN_PRODUCT_NAME"]
+    envname = os.environ["TERRAGEN_ENV_NAME"]
     inv.set_product(product)
 
     for cloud in CLOUDS:
