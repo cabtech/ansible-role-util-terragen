@@ -1,0 +1,17 @@
+# MANAGED_BY_ANSIBLE
+{%	if vultr is defined %}
+{%		if vultr.compute is defined %}
+{%			set BUILDER = "core" %}
+{%			set SLUG = terragen.product + "_" + terragen.env + "_global" %}
+{%			for script in (vultr.compute.startup_scripts | default([])) %}
+{%				set HANDLE = SLUG + "_" + BUILDER + "_" + script.name %}
+{%				set LABEL = HANDLE.replace("_", "-") %}
+
+resource "vultr_startup_script" "{{ HANDLE }}" {
+  name   = "{{ script.name }}"
+  script = filebase64("{{ script.filename }}")
+  type   = "{{ script.type | default ('boot') }}"
+}
+{%			endfor %}
+{%		endif %}
+{%	endif %}
