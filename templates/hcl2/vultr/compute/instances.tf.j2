@@ -1,9 +1,11 @@
 # MANAGED_BY_ANSIBLE
-{% if vultr is defined %}
+{%	if vultr is defined %}
+{%		set BUILDER = "core" %}
 {%		for region in vultr.regions %}
 {%			 if region.compute is defined %}
+{%				set SLUG = terragen.product + "_" + terragen.env + "_" + region.name %}
 {%				for instance in (region.compute.instances | default([])) %}
-{%					set HANDLE = "product_env_" + region.name + "_core_" + instance.name %}
+{%					set HANDLE = SLUG + "_" + BUILDER + "_" + instance.name %}
 {%					set LABEL = HANDLE.replace("_", "-") %}
 
 resource "vultr_instance" "{{ HANDLE }}" {
@@ -17,6 +19,9 @@ resource "vultr_instance" "{{ HANDLE }}" {
   os_id             = 1743 # Ubuntu22
   plan              = "{{ instance.plan }}"
   region            = "{{ region.name }}"
+{%					if instance.startup_script is defined %}
+  script_id         = vultr_startup_script.{{ terragen.product }}_{{ terragen.env }}_global_core_{{ instance.startup_script }}.id
+{%					endif %}
 {%					if instance.tags is defined %}
 
   tags = [
