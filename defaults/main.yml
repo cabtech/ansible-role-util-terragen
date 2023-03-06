@@ -1,0 +1,12 @@
+---
+# --------------------------------
+
+terragen_ansible_dirs:
+- {name: group_vars, mode: "0755"}
+- {name: host_vars, mode: "0755"}
+- {name: inv.d, mode: "0755"}
+- {name: roles, mode: "0755"}
+- {name: roles/galaxy, mode: "0755"}
+
+# --------------------------------
+...
