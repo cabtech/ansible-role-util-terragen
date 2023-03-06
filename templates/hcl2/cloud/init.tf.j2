@@ -1,0 +1,64 @@
+{#
+terragen:
+  providers:
+    name:      string required
+    source:    string required
+    version:   string required
+    instances: 0+
+    - flags:
+	    key:    string required
+	    quoted: Boolean default(true)
+	    value:  string required
+  terraform:
+    required_version: string required
+  workspace:
+    name:         string required
+    organization: string required
+#}
+# MANAGED_BY_ANSIBLE
+
+terraform {
+  backend "remote" {
+    organization = "{{ terragen.workspace.organization }}"
+
+    workspaces {
+      name = "{{ terragen.workspace.name }}"
+    }
+  }
+
+  required_providers {
+{%	for provider in terragen.providers %}
+{%		if provider.state == "present" %}
+    {{ provider.name }} = {
+      source  = "{{ provider.source }}"
+      version = "{{ provider.version }}"
+    }
+{%		endif %}
+{%	endfor %}
+  }
+
+  required_version = "{{ terragen.terraform.required_version }}"
+}
+{%	for provider in terragen.providers %}
+{%		if provider.state == "present" %}
+{%			if provider.instances is defined %}
+{%				for instance in provider.instances %}
+
+provider "{{ provider.name }}" {
+{%					for flag in instance.flags %}
+{%						 if (flag.quoted | default(true)) %}
+  {{ "{:<6}".format(flag.key) }} = "{{ flag.value }}"
+{%						 else %}
+  {{ "{:<6}".format(flag.key) }} = {{ flag.value }}
+{%						 endif %}
+{%					endfor %}
+}
+{%				endfor %}
+{%			else %}
+
+provider "{{ provider.name }}" {}
+{%			endif %}
+{%		endif %}
+{%	endfor %}
+
+# end
