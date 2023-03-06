@@ -13,3 +13,6 @@ lint: .alint .pylint .ylint
 .ylint:
 	yamllint --config-file=.config/yamllint .
 	@touch $@
+
+clean:
+	@/bin/rm -f .alint .pylint .ylint
