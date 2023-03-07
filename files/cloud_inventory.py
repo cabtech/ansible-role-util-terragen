@@ -134,8 +134,10 @@ def match_instance_name(
     name: str, acct: str, product: str, region5: str, role: str
 ) -> object:
     """need to handle multiple hostname patterns"""
+    # pylint: disable-msg=consider-using-f-string
     pattern = r"%s-%s-%s-%s\d*" % (acct, product, region5, role)
     # print(f'{name} vs {pattern}')  # TRACE
+    # pylint: enable-msg=consider-using-f-string
     return re.match(pattern, name)
 
 
@@ -204,6 +206,8 @@ def load_from_file(fname: str, max_age: int = 60) -> dict:
 
 
 class Inventory:
+    """Represents an Ansible inventory"""
+
     def __init__(self):
         self.data = {}
         self.instances = []
@@ -240,6 +244,7 @@ class Inventory:
         return json.dumps(self.data, sort_keys=True, indent=4)
 
     def add_group(self, group):
+        """Add a group, e.g. bastion, to the inventory"""
         self.data.setdefault(group, {})
         self.data[group].setdefault("children", [])
         self.data[group].setdefault("hosts", [])
@@ -247,6 +252,7 @@ class Inventory:
         return
 
     def add_group_to_parent(self, group, parent):
+        """Add a group to its parent, e.g. bastion belongs to uber"""
         self.add_group(parent)
         self.add_group(group)
         children = self.data[parent]["children"]
@@ -255,14 +261,17 @@ class Inventory:
         return
 
     def add_group_var(self, group, key, value):
+        """trivial"""
         self.data[group]["vars"][key] = value
         return
 
     def append_item_to_group_var(self, group, key, value):
+        """for when a group_var is a list, e.g. lists of consul IP addr"""
         self.data[group]["vars"][key].append(value)
         return
 
     def add_host(self, host):
+        """trivial"""
         if host not in self.data["all"]["hosts"]:
             self.data["all"]["hosts"].append(host)
         if host not in self.data["_meta"]["hostvars"]:
@@ -270,21 +279,28 @@ class Inventory:
         return
 
     def get_host_var(self, host, key):
+        """trivial"""
         base = self.data["_meta"]["hostvars"]
         try:
             return base[host][key]
         except KeyError:
             return None
 
+    # pylint: disable-msg=unused-argument
+
     def add_host_var(
         self, host: str, key: str, value: str, use_in_datadog: bool = False
     ):
+        """trivial"""
         base = self.data["_meta"]["hostvars"]
         base.setdefault(host, {})
         base[host][key] = value
         return
 
+    # pylint: enable-msg=unused-argument
+
     def add_host_to_group(self, host, group):
+        """trivial"""
         self.add_host(host)
         self.add_group(group)
         hosts = self.data[group]["hosts"]
@@ -293,9 +309,11 @@ class Inventory:
         return
 
     def get_product(self) -> str:
+        """trivial"""
         return self.product
 
     def set_product(self, product: str) -> str:
+        """trivial"""
         self.product = product
         return self.product
 
@@ -304,6 +322,8 @@ class Inventory:
 
 
 class AwsCloud:
+    """Represents data pulled from Amazon Web Services"""
+
     def __init__(self):
         self.acct = os.environ["TERRAGEN_AWS_ACCT"]
         self.domain = "domain_hardcoded"
@@ -324,7 +344,9 @@ class AwsCloud:
 
     def get_instances(self) -> list:
         """tries to load instance details from cache if not, pulls from AWS"""
-        cache_file = f"/tmp/inventory-aws-{self.acct}-{self.product}-{self.region5}.json"
+        cache_file = (
+            f"/tmp/inventory-aws-{self.acct}-{self.product}-{self.region5}.json"
+        )
         self.instances = load_from_file(cache_file)
         if self.instances:
             return self.instances
@@ -370,7 +392,9 @@ class AwsCloud:
                 continue
             ipv4_private.append(pri_ip)
 
-            matched = match_instance_name(name, self.acct, self.product, self.region5, role)
+            matched = match_instance_name(
+                name, self.acct, self.product, self.region5, role
+            )
             if matched:
                 # pylint: disable-msg=unused-variable
                 (zone, zone6) = aws_get_zone(instance)
@@ -406,7 +430,7 @@ class AwsCloud:
                 have_default_nameserver = True
                 fields = pri_ip.split(".")
                 ns_cidr = ".".join((fields[0], fields[1], "0.2"))  # e.g. 10.11.0.2
-                ns_cidr = "169.254.169.253"  # TODO sort out what has changed
+                ns_cidr = "169.254.169.253"  # AWS metadata server
                 inv.add_group_var("aws", "dnsmasq_nameserver", ns_cidr)
 
             name = get_name(tags)
@@ -487,8 +511,9 @@ class AwsCloud:
         # endfor instances
         return
 
-    def write_ssh_config(self, inv: Inventory) -> None:
+    def write_ssh_config(self) -> None:
         """dump out AWS instance details in SSH config format"""
+        # pylint: disable-msg=consider-using-with
         bastion_addr = None
 
         bastion_keypath = os.environ["TERRAGEN_BASTION_KEYPATH"]
@@ -564,16 +589,22 @@ class AwsCloud:
         return
 
 
+# pylint: enable-msg=consider-using-with
+
+
 # --------------------------------
 
 
 class VultrCloud:
+    """Represents data pulled from Vultr"""
+
     def __init__(self):
         self.endpoint = "https://api.vultr.com/v2"
         self.instances = []
         self.key = os.environ["VULTR_API_KEY"]
 
     def get_instances(self) -> list:
+        """call the Vultr API to get a list of instance dictionaries"""
         endpoint = f"{self.endpoint}/instances"
         headers = {"Authorization": f"Bearer {self.key}"}
         reply = requests.get(endpoint, headers=headers, timeout=10)
@@ -587,6 +618,7 @@ class VultrCloud:
         return
 
     def categorise(self, inv: Inventory):
+        """loop through the Vultr instances and assign them to groups"""
         for instance in self.instances:
             label = instance.get("label", None)
             hostname = instance.get("hostname", None)
@@ -605,11 +637,11 @@ class VultrCloud:
 
     def write_ssh_config(self, inv: Inventory) -> None:
         """dump out host details in SSH config format"""
-        # TODO 3
+        # pylint: disable-msg=consider-using-with
+        bastion_addr = None
         bastion_username = "root"
         keypath = "id_vultr"
         product = inv.get_product()
-        bastion_addr = None
 
         fname = f"{product}_vultr.cfg"
         handle = open(fname, "w", encoding="utf-8")
@@ -648,6 +680,9 @@ class VultrCloud:
         handle.write("#\n# end\n")
         handle.close()
         return
+
+
+# pylint: enable-msg=consider-using-with
 
 
 # --------------------------------
@@ -727,7 +762,7 @@ if __name__ == "__main__":
             aws = AwsCloud()
             aws.get_instances()
             aws.categorise(inv)
-            aws.write_ssh_config(inv)
+            aws.write_ssh_config()
         elif cloud == "docean":
             pass
         elif cloud == "gcp":

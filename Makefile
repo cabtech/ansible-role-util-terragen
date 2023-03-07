@@ -7,7 +7,7 @@ lint: .alint .pylint .ylint
 .pylint: files/*.py
 	flake8 --ignore=E501 files/*.py
 	black files/*.py
-	# pylint files/*.py
+	pylint files/*.py
 	@touch $@
 
 .ylint:
