@@ -9,6 +9,7 @@ date > $logfile
 echo "Install packages" >> $logfile 2>&1
 apt update --yes >> $logfile 2>&1
 apt install --yes curl file jq netcat parted python3 python3-apt python3-pip python3-virtualenv vim wget >> $logfile 2>&1
+apt install --yes locales net-tools nmap >> $logfile 2>&1
 
 # --------------------------------
 
