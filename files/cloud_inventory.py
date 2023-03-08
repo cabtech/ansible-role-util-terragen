@@ -54,6 +54,7 @@ HOST_GROUPS = [
     "bywork",
     "consul",
     "envoy",
+    "git",
     "grafana",
     "hashi",
     "misc",
@@ -511,6 +512,26 @@ class AwsCloud:
         # endfor instances
         return
 
+    def load_secrets(self, inv: Inventory) -> None:
+        """grab secrets from AWS Secrets Manager"""
+        client = boto3.client("secretsmanager", region_name=self.region)
+        prefix = f"sms-{self.acct}-{self.product}-{self.region5}"
+        xargs = {"MaxResults": 100}  # future: paginate
+        response = client.list_secrets(**xargs)
+        for secret in response.get("SecretList", []):
+            name = secret["Name"]
+            if name.startswith(prefix):
+                try:
+                    guts = client.get_secret_value(SecretId=name)
+                    secret_string = guts.get("SecretString", None)
+                    if secret_string:
+                        secrets = json.loads(secret_string)
+                        for secret in secrets:
+                            inv.add_group_var("uber", secret, secrets[secret])
+                except (IndexError, KeyError):
+                    pass
+        return
+
     def write_ssh_config(self) -> None:
         """dump out AWS instance details in SSH config format"""
         # pylint: disable-msg=consider-using-with
@@ -762,6 +783,7 @@ if __name__ == "__main__":
             aws = AwsCloud()
             aws.get_instances()
             aws.categorise(inv)
+            aws.load_secrets(inv)
             aws.write_ssh_config()
         elif cloud == "docean":
             pass
