@@ -370,7 +370,7 @@ class AwsCloud:
     def categorise(self, inv: Inventory) -> None:
         """sort through the AWS instances"""
         inv.add_group("aws")
-        inv.add_group_to_parent("uber", "aws")
+        inv.add_group_to_parent("aws", "uber")
         # add_group_var(inventory, "uber", "consul_datacentre", f"{self.region5}-{product}-{acct}")
         # add_group_var(inventory, "aws", "dnsmasq_domains", [f"{region}.compute.internal"])
         # add_group_var(inventory, "aws", "dnsmasq_ok_to_reboot", True)
@@ -397,6 +397,7 @@ class AwsCloud:
                 name, self.acct, self.product, self.region5, role
             )
             if matched:
+                inv.add_group_to_parent(role, "aws")
                 # pylint: disable-msg=unused-variable
                 (zone, zone6) = aws_get_zone(instance)
                 # pylint: enable-msg=unused-variable
