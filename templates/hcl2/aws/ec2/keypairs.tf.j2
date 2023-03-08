@@ -1,0 +1,24 @@
+{#
+aws:
+  regions: 1+
+  - ec2:
+      keypairs: 0+
+      - name: string required
+        path: string required
+#}
+# MANAGED_BY_ANSIBLE
+# --------------------------------
+{%	for region in aws.regions: %}
+{%		if region.ec2 is defined %}
+{%			set USLUG = region.slug | replace ('-', '_') %}
+{%			for keypair in (region.ec2.keypairs | default([])) %}
+
+resource "aws_key_pair" "{{ USLUG }}_core_{{ keypair.name }}" {
+  key_name   = "kp-{{ region.slug }}-core-{{ keypair.name }}"
+  public_key = file("{{ keypair.path }}")
+}
+{%			endfor %}
+{%		endif %}
+{%	endfor %}
+
+# --------------------------------

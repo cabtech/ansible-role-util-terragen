@@ -1,0 +1,13 @@
+---
+# --------------------------------
+
+- name: "Generate EC2 keypairs"
+  ansible.builtin.template:
+    dest: aws-ec2-keypairs.tf
+    mode: "0644"
+    src: hcl2/aws/ec2/keypairs.tf.j2
+  delegate_to: localhost
+  tags: ["ct-terragen"]
+
+# --------------------------------
+...
