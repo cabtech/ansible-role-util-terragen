@@ -9,5 +9,13 @@
   delegate_to: localhost
   tags: ["ct-terragen"]
 
+- name: "Generate Secrets Manager secrets"
+  ansible.builtin.template:
+    src: hcl2/aws/secmgr/secrets.tf.j2
+    dest: aws-secmgr-secrets.tf
+    mode: "0644"
+  delegate_to: localhost
+  tags: ["ct-terragen"]
+
 # --------------------------------
 ...
