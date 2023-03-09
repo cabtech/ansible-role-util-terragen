@@ -49,6 +49,8 @@ AWS_GEOG = {
 # groups we compare hostnames against
 HOST_GROUPS = [
     "bastion",
+    "bitwarden",
+    "boundary",
     "build",
     "bycon",
     "bywork",
@@ -62,6 +64,7 @@ HOST_GROUPS = [
     "nomad",
     "postgres",
     "quest",
+    "sui",
     "svc",
     "vault",
     "vpn",
@@ -69,26 +72,6 @@ HOST_GROUPS = [
 ]
 
 PORTS = {"consul": 8600, "kafka": 9092, "zookeeper": 2181}
-
-ROLES = [
-    "bastion",
-    "boundary",
-    "build",
-    "consul",
-    "envoy",
-    "grafana",
-    "hashi",
-    "internet",
-    "misc",
-    "mirror",
-    "nomad",
-    "postgres",
-    "quest",
-    "sui",
-    "svc",
-    "vault",
-    "vpn",
-]
 
 # servers that live in clusters
 SERVER_GROUPS = ("consul", "nomad", "vault", "zoo")
@@ -369,6 +352,7 @@ class AwsCloud:
 
     def categorise(self, inv: Inventory) -> None:
         """sort through the AWS instances"""
+
         inv.add_group("aws")
         inv.add_group_to_parent("aws", "uber")
         # add_group_var(inventory, "uber", "consul_datacentre", f"{self.region5}-{product}-{acct}")
@@ -397,13 +381,14 @@ class AwsCloud:
                 name, self.acct, self.product, self.region5, role
             )
             if matched:
-                inv.add_group_to_parent(role, "aws")
+                inv.add_host(name)
+                inv.add_host_to_group(name, "aws")
+                inv.add_host_to_group(name, "internet")
+                inv.add_host_to_group(name, role)
+                inv.add_group_to_parent(role, "uber")
                 # pylint: disable-msg=unused-variable
                 (zone, zone6) = aws_get_zone(instance)
                 # pylint: enable-msg=unused-variable
-                inv.add_host(name)
-                inv.add_host_to_group(name, role)
-                inv.add_host_to_group(name, "internet")
                 inv.add_host_var(name, "acct", self.acct, use_in_datadog=True)
                 inv.add_host_var(name, "cloud", "aws", use_in_datadog=True)
                 inv.add_host_var(name, "ct_cloud", "aws")
@@ -475,9 +460,13 @@ class AwsCloud:
                         group = "ungrouped"
                     else:
                         function = group
+
                     inv.add_host(name)
+                    inv.add_host_to_group(name, "aws")
                     inv.add_host_to_group(name, group)
+                    inv.add_group_to_parent(group, "uber")
                     inv.add_host_var(name, "function", function, use_in_datadog=True)
+
                     if group in SERVER_GROUPS:
                         inv.append_item_to_group_var("uber", group + "_servers", pri_ip)
                     if group == "bycon":
@@ -639,15 +628,19 @@ class VultrCloud:
                 # print(json.dumps(instance))
         return
 
-    def categorise(self, inv: Inventory):
-        """loop through the Vultr instances and assign them to groups"""
+    def categorise(self, inv: Inventory) -> None:
+        """sort through the Vultr instances"""
+
+        inv.add_group("vultr")
+        inv.add_group_to_parent("vultr", "uber")
+
         for instance in self.instances:
             label = instance.get("label", None)
             hostname = instance.get("hostname", None)
-            for role in ROLES:
+            for role in HOST_GROUPS:
                 if (role in hostname) or (role in label):
                     inv.add_host_to_group(hostname, role)
-                    inv.add_host_to_group(hostname, "uber")
+                    inv.add_host_to_group(hostname, "vultr")
                     inv.add_host_var(hostname, "cloud", "vultr")
                     inv.add_host_var(hostname, "function", role)
                     inv.add_host_var(hostname, "ip_pub", instance.get("main_ip", None))
